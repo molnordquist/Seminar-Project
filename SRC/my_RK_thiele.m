@@ -1,0 +1,30 @@
+%Runge Kutta
+function Vnext = my_RK_thiele(t, V,h,delta,P,S,mu)
+    % One step of RK4's method for Thiele's differential equation
+    % Parameters: 
+        % t = time 
+        % V = reserves at current time 
+        % delta = force of interest at time t 
+        % P = annual premium rate that is payable at time t
+        % S = sum insured payable on death at time t
+        % mu = force of mortality
+
+    %time steps 
+    tmid = t+ h/2;
+    tnext = t+h;
+    %mortality 
+    mu_curr =mu(t);
+    mu_mid = mu(tmid);
+    mu_next = mu(tnext);
+
+    %Thieles
+    dV = delta*V + P - mu_curr*(S-V);
+
+    %Settig up method
+    s1 = delta*V + P - mu_curr*(S-V);
+    s2= delta*(V +(h/2)*s1) + P - mu_mid*(S-(V +(h/2)*s1));
+    s3=delta*(V +(h/2)*s2) + P - mu_mid*(S-(V +(h/2)*s2));
+    s4 = delta*(V +(h/2)*s3) + P - mu_mid*(S-(V +(h/2)*s3));
+    Vnext =Vn + (h/6)(s1 +2*s2 +2*s3 +s4) ;
+ 
+end
