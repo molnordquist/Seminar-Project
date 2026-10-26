@@ -1,5 +1,5 @@
 %Euler's method 
-function Vnext = my_Euler_thiele(V,h,delta,P,S,mu_curr)
+function Vnext = my_Euler_thiele(t,V,h,delta,P,S,mu)
     % One step of Euler's method for Thiele's differential equation
     % Parameters: 
         % t = time 
@@ -13,9 +13,7 @@ function Vnext = my_Euler_thiele(V,h,delta,P,S,mu_curr)
     mu_curr = mu(t);
 
     %Thieles
-    dV = delta*V + P - mu_curr*(S-V);
-
-    % Breaking up Thiele's ODE the Coefficients of V' = a(t)*V + b(t)
-    Vnext = V + h*dV;
+    slope = delta*V + P - mu_curr*(S-V);
+    Vnext = V + h*slope;
  
 end
