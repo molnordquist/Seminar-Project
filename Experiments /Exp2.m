@@ -1,0 +1,53 @@
+
+% Textbook example 7.13
+clear;
+clc;
+close all;
+
+
+%Define parameters
+T = 20; %policy term is 20 years
+delta = 0.04; %interest rate per year
+P = 2500; %premiums payable continuously
+S = 100000; %death benefit
+mu = @(t) .001147; %mu taken in as a function (we are using constant mortality for this example)
+
+% Test h = -0.05 first
+N=400;
+h= -T/N;
+%creating equally spaced time-steps
+t = linspace(T,0,N+1); %start condition T, end condition 0, N+1 points
+% t=[20, 19.95, 19.90, ... , 0]
+
+% Setting the first term in the array as the Terminal condition = endowment benefit
+V_euler(1) = 100000;
+V_trap(1) = 100000;
+V_RK(1) = 100000;
+
+%running methods
+for n = 1:N
+    V_euler(n+1) = my_Euler_thiele(t(n),V_euler(n),h,delta,P,S,mu);
+    V_trap(n+1) = my_trapezoidal_thiele(t(n),V_trap(n),h,delta,P,S,mu);
+    V_RK(n+1) = my_RK_thiele(t(n),V_RK(n),h,delta,P,S,mu);
+end
+
+% Compare reserves at year 10
+YR10 = find(t==10,1);
+
+fprintf('Euler at year 10: %.10f\n', V_euler(YR10));
+fprintf('Trapezoidal at year 10: %.10f\n', V_trap(YR10));
+fprintf('RK4 at year 10: %.10f\n', V_RK(YR10));
+
+
+% Plot
+figure;
+plot(t,V_euler,'-','LineWidth',2);
+hold on;
+plot(t,V_trap,'--','LineWidth',2);
+plot(t,V_RK,':','LineWidth',2);
+
+xlabel('Time (years)');
+ylabel('Reserve ($)');
+title('Comparison of Numerical Methods for Thiele''s ODE');
+legend('Euler','Trapezoidal','RK4');
+grid on;

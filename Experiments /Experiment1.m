@@ -8,7 +8,7 @@ close all;
 addpath('../SRC');
 
 %% Define Parameters
-T = 10; %terminal condition
+T = 10; %terminal time
 delta = 0.03;% 3% force of interest per year
 P = 800; %continuous premium 
 S = 100000; %death benefit
