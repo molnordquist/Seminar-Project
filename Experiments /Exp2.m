@@ -11,7 +11,8 @@ T = 20;
 S = 100000;
 P = 2500;
 delta = 0.04;
-mu = @(t) 0.01; %randomly chosen but can be estimated through mortality data 
+mu_const = 0.01;
+mu = @(t) mu_const; %randomly chosen but can be estimated through mortality data 
 %setting up equation
 a = delta + mu_const;
 b = P - mu_const*S;
@@ -239,6 +240,7 @@ fprintf('Difference in Reserves under Makeham vs Gompertz Mortality (RK4): %.10f
 
 %% 
 %test reference solution using ODE45 for non-constant mortality
+%this is using MATLABs built in ODE solver 
 T = 20;
 S = 100000;
 P = 2500;
@@ -262,10 +264,11 @@ f = @(t,V) delta*V + P - mu(t)*(S-V);
 
 % set up ode45. solve backwards for t=20 to t=0
 options = odeset(RelTol=1e-12,AbsTol=1e-12);
-[t_ref,V_ref] = ode45(f,[T 0],S,options);
-% Reference reserve at year 10
-V_reference = interp1(t_ref,V_ref,10,'pchip');
-
+[t_ref,V_ref] = ode45(f,20:-0.01:0,S,options);
+% Find reference reserve at year 10
+YR10_ref = find(t_ref == 10 ,1);
+V_reference = V_ref(YR10_ref); 
+%%%%%%%%%%%%%%%%
 fprintf('Makeham reference reserve at year 10: %.10f\n',V_reference);
 % Errors for h = -0.05
 error_euler = abs(V_euler(YR10)-V_reference);
