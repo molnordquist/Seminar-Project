@@ -18,7 +18,9 @@ function Vnext = my_trapezoidal_thiele(t,V,h,delta,P,S,mu)
     b_n = P - mu_curr*S;
     b_next = P - mu_next*S;
 
-    % Implicit trapezoidal 
+    % Implicit trapezoidal method re-arranged
+    % The next reserve appears on both sides of the trapezoidal equation,
+    % you can rearrange to calculate next reserve directly 
     numerator = V + (h/2)*(a_n*V + b_n + b_next);
     denominator = 1 - (h/2)*a_next;
 

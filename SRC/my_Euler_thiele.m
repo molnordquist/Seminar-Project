@@ -1,9 +1,12 @@
 %Euler's method 
 function Vnext = my_Euler_thiele(t,V,h,delta,P,S,mu)
     % One step of Euler's method for Thiele's differential equation
+    %This method calculates the slope at the current point and uses this to
+    %estimate the next reserve
     % Parameters: 
         % t = time 
         % V = reserves at current time 
+        % h = step-size
         % delta = force of interest at time t 
         % P = annual premium rate that is payable at time t
         % S = sum insured payable on death at time t

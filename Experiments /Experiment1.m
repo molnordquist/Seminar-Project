@@ -39,10 +39,10 @@ end
 
 %% Plot
 figure;
-plot(t,V_euler,'LineWidth',1.5);
+plot(t,V_euler,'LineWidth',2.5);
 hold on;
 
-plot(t,V_trap,'--','LineWidth',1.5);
+plot(t,V_trap,'--','LineWidth',2.5);
 plot(t,V_RK,':','LineWidth',2);
 
 xlabel('Time (years)');

@@ -1,5 +1,5 @@
 function dV = thieles(t,V,delta,P,S,mu)
-    % Thiele's ODE modelnin terms of constant mortality model 
+    % Thiele's ODE model in terms of constant mortality model 
     % Parameters: 
         % dv = change in reserves over time 
         % t = time 
