@@ -1,3 +1,8 @@
+clear;
+clc;
+close all;
+addpath('../SRC');
+
 %% Analytical Solution for Constant Mortality
 % Parameters from previous textbook example
 T = 20;
@@ -115,4 +120,142 @@ title('Analytical Solutions for Mortality Laws in Thieles ODE');
 legend('Constant Mortality','Gompertz','Makeham','Location','best');
 grid on;
 hold off;
+
+%% Convergence Analysis 
+
+%Define parameters
+T = 20; 
+delta = 0.04; 
+P = 2500; 
+S = 100000; 
+
+mu_const = 0.01; 
+mu = @(t) mu_const; %mu is set up as a function of t
+
+
+% Test h = -0.05 first (solving backwards)
+N=400;
+h= -T/N;
+%creating equally spaced time-steps
+t = linspace(T,0,N+1); 
+
+%Initializing arrays
+V_euler =zeros(1, N+1);
+V_RK = zeros(1, N+1);
+V_trap = zeros(1, N+1);
+
+% Setting the first term in the array as the Terminal condition 
+V_euler(1) = 100000;
+V_trap(1) = 100000;
+V_RK(1) = 100000;
+
+%running methods 
+for n = 1:N
+    V_euler(n+1) = my_Euler_thiele(t(n),V_euler(n),h,delta,P,S,mu);
+    V_trap(n+1) = my_trapezoidal_thiele(t(n),V_trap(n),h,delta,P,S,mu);
+    V_RK(n+1) = my_RK_thiele(t(n),V_RK(n),h,delta,P,S,mu);
+end
+
+% Compare reserves at year 10
+% finding spot in array of year 10
+YR10 = find(t==10,1);
+%using coded constant exact solution
+V_exact_10 = V_exact_constant(10);
+error_euler = abs(V_euler(YR10)-V_exact_10);
+error_RK = abs(V_RK(YR10)-V_exact_10);
+error_trap = abs(V_trap(YR10)-V_exact_10);
+
+%Reserve values by method
+fprintf('Step size = %.4f\n', h)
+fprintf('Error of Euler at year 10: %.10f\n', error_euler);
+fprintf('Error of RK4 at year 10: %.10f\n', error_RK);
+fprintf('Error of Trapezoidal at year 10: %.10f\n', error_trap);
+
+%%
+% New step-size -0.025
+
+N=800;
+h2= -T/N;
+%creating equally spaced time-steps
+t = linspace(T,0,N+1); 
+
+%Initializing arrays
+V_euler2 =zeros(1, N+1);
+V_RK2 = zeros(1, N+1);
+V_trap2 = zeros(1, N+1);
+
+% Setting the first term in the array as the Terminal condition 
+V_euler2(1) = 100000;
+V_trap2(1) = 100000;
+V_RK2(1) = 100000;
+
+%running methods 
+for n = 1:N
+    V_euler2(n+1) = my_Euler_thiele(t(n),V_euler2(n),h2,delta,P,S,mu);
+    V_trap2(n+1) = my_trapezoidal_thiele(t(n),V_trap2(n),h2,delta,P,S,mu);
+    V_RK2(n+1) = my_RK_thiele(t(n),V_RK2(n),h2,delta,P,S,mu);
+end
+
+% Compare reserves at year 10
+% finding spot in array of year 10
+YR10 = find(t==10,1);
+%using coded constant exact solution
+V_exact_10 = V_exact_constant(10);
+error_euler2 = abs(V_euler2(YR10)-V_exact_10);
+error_RK2 = abs(V_RK2(YR10)-V_exact_10);
+error_trap2 = abs(V_trap2(YR10)-V_exact_10);
+
+%Reserve values by method
+fprintf('Step size = %.4f\n', h2)
+fprintf('Error of Euler at year 10: %.10f\n', error_euler2);
+fprintf('Error of RK4 at year 10: %.10f\n', error_RK2);
+fprintf('Error of Trapezoidal at year 10: %.10f\n', error_trap2);
+%%
+% New step-size -0.025
+
+N=1600;
+h3= -T/N;
+%creating equally spaced time-steps
+t = linspace(T,0,N+1); 
+
+%Initializing arrays
+V_euler3 =zeros(1, N+1);
+V_RK3 = zeros(1, N+1);
+V_trap3 = zeros(1, N+1);
+
+% Setting the first term in the array as the Terminal condition 
+V_euler3(1) = 100000;
+V_trap3(1) = 100000;
+V_RK3(1) = 100000;
+
+%running methods 
+for n = 1:N
+    V_euler3(n+1) = my_Euler_thiele(t(n),V_euler3(n),h3,delta,P,S,mu);
+    V_trap3(n+1) = my_trapezoidal_thiele(t(n),V_trap3(n),h3,delta,P,S,mu);
+    V_RK3(n+1) = my_RK_thiele(t(n),V_RK3(n),h3,delta,P,S,mu);
+end
+
+% Compare reserves at year 10
+% finding spot in array of year 10
+YR10 = find(t==10,1);
+%using coded constant exact solution
+V_exact_10 = V_exact_constant(10);
+error_euler3 = abs(V_euler3(YR10)-V_exact_10);
+error_RK3 = abs(V_RK3(YR10)-V_exact_10);
+error_trap3 = abs(V_trap3(YR10)-V_exact_10);
+
+%Reserve values by method
+fprintf('Step size = %.4f\n', h3)
+fprintf('Error of Euler at year 10: %.10f\n', error_euler3);
+fprintf('Error of RK4 at year 10: %.10f\n', error_RK3);
+fprintf('Error of Trapezoidal at year 10: %.10f\n', error_trap3);
+
+%%
+%calculating order of convergence 
+p_euler = log(error_euler3/error_euler2)/log(2);
+fprintf('Euler convergence order: %.4f\n',p_euler);
+p_trap = log(error_trap3/error_trap2)/log(2);
+fprintf('Trapezoidal convergence order: %.4f\n',p_trap);
+p_RK = log(error_RK3/error_RK2)/log(2);
+fprintf('RK4 convergence order: %.4f\n',p_RK);
 
