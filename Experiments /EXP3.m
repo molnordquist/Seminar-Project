@@ -9,7 +9,7 @@ T = 20;
 S = 100000;
 P = 2500;
 delta = 0.04;
-x = 30;
+x = 30; %age
 
 % Setting up Gompertz mortality parameters
 mu_const = 0.01;
@@ -252,10 +252,10 @@ fprintf('Error of Trapezoidal at year 10: %.10f\n', error_trap3);
 
 %%
 %calculating order of convergence 
-p_euler = log(error_euler3/error_euler2)/log(2);
-fprintf('Euler convergence order: %.4f\n',p_euler);
-p_trap = log(error_trap3/error_trap2)/log(2);
-fprintf('Trapezoidal convergence order: %.4f\n',p_trap);
-p_RK = log(error_RK3/error_RK2)/log(2);
-fprintf('RK4 convergence order: %.4f\n',p_RK);
+k_euler = abs(log(error_euler3/error_euler2)/log(2));
+fprintf('Euler order of convergence: %.4f\n',k_euler);
+k_trap = abs(log(error_trap3/error_trap2)/log(2));
+fprintf('Trapezoidal order of convergence: %.4f\n',k_trap);
+k_RK = abs(log(error_RK3/error_RK2)/log(2));
+fprintf('RK4 order of convergence: %.4f\n',k_RK);
 
