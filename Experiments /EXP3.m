@@ -11,7 +11,7 @@ P = 2500;
 delta = 0.04;
 x = 30; %age
 
-% Setting up Gompertz mortality parameters
+% mortality
 mu_const = 0.01;
 
 %creating timegrid
