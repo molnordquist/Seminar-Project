@@ -1,3 +1,7 @@
+clear;
+clc;
+close all;
+addpath('../SRC');
 %% Stability Tests 
 
 %Parameters
@@ -62,13 +66,42 @@ for x = ages
 end
 
 %% 
-% Plotting Stability bounds
+% Plotting Stability bounds under all mortality
 
 t = linspace(0,T,200);
 
-figure;
-% Euler
-subplot(2,1,1); %creates two stacked sub plots
+figure('Position',[100,100,1100,1000]);
+
+% Euler for constant mortality 
+subplot(3,2,1); %creates stacked subplots
+mu_t = mu_const;
+%calculating all stability bounds for all mortality vals
+hmax_euler = 2./(delta + mu_t); 
+yline(hmax_euler, 'LineWidth', 1.5)
+    
+xlabel('Time (years)');
+ylabel('Maximum |h|');
+ylim([0,75]);
+title('Stability bound for Euler Method under Constant mortality');
+legend('Location','best');
+grid on;
+
+% RK4 for constant mortality
+subplot(3,2,2);
+mu_t = mu_const;
+hmax_RK = 2.7853./(delta + mu_t);
+yline(hmax_RK, 'LineWidth', 1.5)
+
+xlabel('Time (years)');
+ylabel('Maximum |h|');
+ylim([0,75]);
+title('Stability Bound for RK4 Method under Constant Mortality');
+legend('Location','best');
+grid on;
+
+%%%%
+%Euler for Gompertz Mortality
+subplot(3,2,3)
 hold on;
 for x = ages
     %calculates mortality for age x for all time steps
@@ -82,13 +115,12 @@ end
 xlabel('Time (years)');
 ylabel('Maximum |h|');
 ylim([0,75]);
-title('Stability bound for Euler Method');
+title('Stability bound for Euler Method under Gompertz mortality');
 legend('Location','best');
 grid on;
 
-
-% RK4
-subplot(2,1,2);
+% RK4 for Gompertz Mortality
+subplot(3,2,4);
 hold on;
 
 for x = ages
@@ -101,6 +133,46 @@ end
 xlabel('Time (years)');
 ylabel('Maximum |h|');
 ylim([0,75]);
-title('Stability Bound for RK4 Method');
+title('Stability Bound for RK4 Method under Gompertz Mortality');
 legend('Location','best');
 grid on;
+
+%%%%
+% Euler for Makeham Mortality
+subplot(3,2,5); %creates stacked sub plots
+hold on;
+for x = ages
+    %calculates mortality for age x for all time steps
+    mu_t = A+ B*c.^(x+t);
+    %calculating all stability bounds for all mortality vals
+    hmax_euler = 2./(delta + mu_t); 
+    %num2str concerts numbers to a character array
+    plot(t,hmax_euler,'LineWidth',1.5,'DisplayName',['Age ',num2str(x)]);
+end
+
+xlabel('Time (years)');
+ylabel('Maximum |h|');
+ylim([0,75]);
+title('Stability bound for Euler Method under Makeham Mortality');
+legend('Location','best');
+grid on;
+
+
+% RK4 for Makeham Mortality
+subplot(3,2,6);
+hold on;
+
+for x = ages
+    mu_t = A+ B*c.^(x+t);
+    hmax_RK = 2.7853./(delta + mu_t);
+    plot(t,hmax_RK,'LineWidth',1.5, 'DisplayName',['Age ',num2str(x)]);
+
+end
+
+xlabel('Time (years)');
+ylabel('Maximum |h|');
+ylim([0,75]);
+title('Stability Bound for RK4 Method under Makeham Mortality');
+legend('Location','best');
+grid on;
+

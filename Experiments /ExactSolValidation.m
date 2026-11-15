@@ -3,7 +3,6 @@ clc;
 close all;
 addpath('../SRC');
 
-exportgraphics(gcf, fullfile(figureFolder, 'Convergence_Plot.png'),'Resolution', 300);
 
 %% Analytical Solution for Constant Mortality
 % Parameters from previous textbook example
