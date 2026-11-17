@@ -193,7 +193,9 @@ ages = [30 50 70 90];
 %as defiing N values to change step-sizes
 N_vals = [1,2,4,10,20];
 %loop through policy starting age
-
+colors = lines(length(ages));
+figure;
+hold on;
 for j = 1:length(ages)
     x = ages(j);
     %mortality must be in this loop because it changes with age
@@ -230,29 +232,26 @@ for j = 1:length(ages)
         V0_RK(i) = V_RK(end);
         V0_trap(i) = V_trap(end);
     
-    colors = lines(length(ages));
-    figure;
-    hold on;
 
     end
-    
+
     % Plot numerical reserves for this age
     plot(T./N_vals,V0_euler,'o-', ...
         'Color',colors(j,:),'LineWidth',1.5, ...
-        'DisplayName',sprintf('Euler - Age %d',x));
+        'DisplayName',sprintf('Euler at Age %d',x));
 
-    plot(T./N_vals,V0_RK,'s--', ...
+    plot(T./N_vals,V0_RK,'s-', ...
         'Color',colors(j,:),'LineWidth',1.5, ...
-        'DisplayName',sprintf('RK4 - Age %d',x));
+        'DisplayName',sprintf('RK4 at Age %d',x));
 
-    plot(T./N_vals,V0_trap,'^:', ...
+    plot(T./N_vals,V0_trap,'^-', ...
         'Color',colors(j,:),'LineWidth',1.5, ...
-        'DisplayName',sprintf('Trapezoidal - Age %d',x));
+        'DisplayName',sprintf('Trapezoidal at Age %d',x));
 end
 
 xlabel('Absolute Step Size |h|');
 ylabel('Reserve at t = 0 ($)');
-title('Numerical Reserves under Gompertz Mortality');
+title('Numerical Reserves by Age under Gompertz Mortality');
 legend('Location','eastoutside');
 grid on;
     
