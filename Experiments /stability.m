@@ -179,77 +179,107 @@ grid on;
 %%
 %Gompertz Mortality
 
-T=20;
-x= 70; %old age so mortality behavior will increase rapidly  
+T=20; %old age so mortality behavior will increase rapidly  
 delta = 0.04;
 P = 2500; 
 S= 100000; 
 
 B = 2.7e-6;
 c = 1.124;
-mu = @(t) B*c^(x+T);
-mu_T = mu(T);
 
+
+%defining ages we will be looping through policy start date ages
+ages = [30 50 70 90];
+%as defiing N values to change step-sizes
 N_vals = [1,2,4,10,20];
+%loop through policy starting age
 
-V0_euler = zeros(size(N_vals));
-V0_RK = zeros(size(N_vals));
-V0_trap = zeros(size(N_vals));
+for j = 1:length(ages)
+    x = ages(j);
+    %mortality must be in this loop because it changes with age
+    mu = @(t) B*c.^(x+t);
 
-for i = 1:length(N_vals)
-    N = N_vals(i);
-    h = -T/N;
-    t = linspace(T,0,N+1);
+    V0_euler = zeros(size(N_vals));
+    V0_RK = zeros(size(N_vals));
+    V0_trap = zeros(size(N_vals));
+    
+    for i = 1:length(N_vals)
+        N = N_vals(i);
+        h = -T/N;
+        t = linspace(T,0,N+1);
+    
+        % Initialize the reserves
+        V_euler = zeros(1,N+1);
+        V_RK = zeros(1,N+1);
+        V_trap = zeros(1,N+1);
+    
+        %creating first entry of array as terminal condition
+        V_euler(1) = S;
+        V_RK(1) = S;
+        V_trap(1) = S;
+    
+        % Solve using numerical methods
+        for n = 1:N
+            V_euler(n+1) = my_Euler_thiele(t(n),V_euler(n),h,delta,P,S,mu);
+            V_RK(n+1) = my_RK_thiele(t(n),V_RK(n),h,delta,P,S,mu);
+            V_trap(n+1) = my_trapezoidal_thiele(t(n),V_trap(n),h,delta,P,S,mu);
+        end
+    
+        % Store reserve at t = 0 for each step size
+        V0_euler(i) = V_euler(end);
+        V0_RK(i) = V_RK(end);
+        V0_trap(i) = V_trap(end);
+    
+    colors = lines(length(ages));
+    figure;
+    hold on;
 
-    % Initialize the reserves
-    V_euler = zeros(1,N+1);
-    V_RK = zeros(1,N+1);
-    V_trap = zeros(1,N+1);
-
-    %creating first entry of array as terminal condition
-    V_euler(1) = S;
-    V_RK(1) = S;
-    V_trap(1) = S;
-
-    % Solve using numerical methods
-    for n = 1:N
-        V_euler(n+1) = my_Euler_thiele(t(n),V_euler(n),h,delta,P,S,mu);
-        V_RK(n+1) = my_RK_thiele(t(n),V_RK(n),h,delta,P,S,mu);
-        V_trap(n+1) = my_trapezoidal_thiele(t(n),V_trap(n),h,delta,P,S,mu);
     end
+    
+    % Plot numerical reserves for this age
+    plot(T./N_vals,V0_euler,'o-', ...
+        'Color',colors(j,:),'LineWidth',1.5, ...
+        'DisplayName',sprintf('Euler - Age %d',x));
 
-    % Store reserve at t = 0 for each step size
-    V0_euler(i) = V_euler(end);
-    V0_RK(i) = V_RK(end);
-    V0_trap(i) = V_trap(end);
+    plot(T./N_vals,V0_RK,'s--', ...
+        'Color',colors(j,:),'LineWidth',1.5, ...
+        'DisplayName',sprintf('RK4 - Age %d',x));
 
+    plot(T./N_vals,V0_trap,'^:', ...
+        'Color',colors(j,:),'LineWidth',1.5, ...
+        'DisplayName',sprintf('Trapezoidal - Age %d',x));
 end
 
-
-results = table(N_vals', (T./N_vals)',V0_euler', V0_RK', V0_trap', ...
-    'VariableNames', {'N','StepSize', ...
-    'EulerReserve','RK4Reserve','TrapezoidalReserve'});
-
-disp(results);
-
-%recalculating exact under gompertz. Creating derived Integrating factor
-I = @(t) exp(-delta*t - (B*c.^(x+t))/log(c));
-
-% Creating time step grid
-t = linspace(0,T,401);
-
-% Initializing reserve array
-V_exact_gompertz = zeros(1,length(t));
-
-% Creating function for integral
-full_int_gomp = @(s) I(s).*(P-S*mu(s));
-% Calculate analytical reserve at each time
-for n = 1:length(t)
-    tn = t(n);
-    % Calculating the integral from xmin=tn to xmax=T
-    integral_sol_gomp = integral(full_int_gomp,tn,T);
-    V_exact_gompertz(n) = (I(T)*S - integral_sol_gomp)/I(tn);
-end
+xlabel('Absolute Step Size |h|');
+ylabel('Reserve at t = 0 ($)');
+title('Numerical Reserves under Gompertz Mortality');
+legend('Location','eastoutside');
+grid on;
+    
+    %results = table(N_vals', (T./N_vals)',V0_euler', V0_RK', V0_trap', ...
+        %'VariableNames', {'N','StepSize', ...
+        %'EulerReserve','RK4Reserve','TrapezoidalReserve'});
+    
+    %disp(results);
+    
+    %recalculating exact under gompertz. Creating derived Integrating factor
+    I = @(t) exp(-delta*t - (B*c.^(x+t))/log(c));
+    
+    % Creating time step grid
+    t = linspace(0,T,401);
+    
+    % Initializing reserve array
+    V_exact_gompertz = zeros(1,length(t));
+    
+    % Creating function for integral
+    full_int_gomp = @(s) I(s).*(P-S*mu(s));
+    % Calculate analytical reserve at each time
+    for n = 1:length(t)
+        tn = t(n);
+        % Calculating the integral from xmin=tn to xmax=T
+        integral_sol_gomp = integral(full_int_gomp,tn,T);
+        V_exact_gompertz(n) = (I(T)*S - integral_sol_gomp)/I(tn);
+    end
 
 % Find reserve at year 10, indicated year of textbook. Same as 40 years old
 YR0 = find(t == 0,1);
@@ -285,70 +315,76 @@ P = 2500;
 delta = 0.04;
 x = 70;
 
-% Seting up Gompertz mortality parameters
+% Seting up Makeham mortality parameters
 A = 0.00022;
 B = 2.7e-6;
 c = 1.124;
-mu = @(t) A + B*c.^(x+t);
+
+%defining ages we will be looping through policy start date ages
+ages = [30 50 70 90];
+%as defiing N values to change step-sizes
 N_vals = [1,2,4,10,20];
 
-V0_euler = zeros(size(N_vals));
-V0_RK = zeros(size(N_vals));
-V0_trap = zeros(size(N_vals));
+%loop through policy starting age
+for j = 1:length(ages)
+    x = ages(j);
+    %mortality must be in this loop because it changes with age
+    mu = @(t) A + B*c.^(x+t);
 
-for i = 1:length(N_vals)
-    N = N_vals(i);
-    h = -T/N;
-    t = linspace(T,0,N+1);
 
-    % Initialize the reserves
-    V_euler = zeros(1,N+1);
-    V_RK = zeros(1,N+1);
-    V_trap = zeros(1,N+1);
+    V0_euler = zeros(size(N_vals));
+    V0_RK = zeros(size(N_vals));
+    V0_trap = zeros(size(N_vals));
 
-    %creating first entry of array as terminal condition
-    V_euler(1) = S;
-    V_RK(1) = S;
-    V_trap(1) = S;
+    for i = 1:length(N_vals)
+        N = N_vals(i);
+        h = -T/N;
+        t = linspace(T,0,N+1);
 
-    % Solve using numerical methods
-    for n = 1:N
-        V_euler(n+1) = my_Euler_thiele(t(n),V_euler(n),h,delta,P,S,mu);
-        V_RK(n+1) = my_RK_thiele(t(n),V_RK(n),h,delta,P,S,mu);
-        V_trap(n+1) = my_trapezoidal_thiele(t(n),V_trap(n),h,delta,P,S,mu);
+        % Initialize the reserves
+        V_euler = zeros(1,N+1);
+        V_RK = zeros(1,N+1);
+        V_trap = zeros(1,N+1);
+
+        %creating first entry of array as terminal condition
+        V_euler(1) = S;
+        V_RK(1) = S;
+        V_trap(1) = S;
+    
+        % Solve using numerical methods
+        for n = 1:N
+            V_euler(n+1) = my_Euler_thiele(t(n),V_euler(n),h,delta,P,S,mu);
+            V_RK(n+1) = my_RK_thiele(t(n),V_RK(n),h,delta,P,S,mu);
+            V_trap(n+1) = my_trapezoidal_thiele(t(n),V_trap(n),h,delta,P,S,mu);
+        end
+    
+        % Store reserve at t = 0 for each step size
+        V0_euler(i) = V_euler(end);
+        V0_RK(i) = V_RK(end);
+        V0_trap(i) = V_trap(end);
+
     end
 
-    % Store reserve at t = 0 for each step size
-    V0_euler(i) = V_euler(end);
-    V0_RK(i) = V_RK(end);
-    V0_trap(i) = V_trap(end);
 
-end
-
-
-results = table(N_vals', (T./N_vals)',V0_euler', V0_RK', V0_trap', ...
-    'VariableNames', {'N','StepSize', ...
-    'EulerReserve','RK4Reserve','TrapezoidalReserve'});
-
-disp(results);
-% Creating derived Integrating factor
-I = @(t) exp(-delta*t -A*t - (B*c.^(x+t))/log(c));
-
-% Creating time step grid
-t = linspace(0,T,401);
-
-% Initializing reserve array
-V_exact_makeham = zeros(1,length(t));
-
-
-% Creating function for integral
-full_int_mak = @(s) I(s).*(P-S*mu(s));
-% Calculate analytical reserve at each time
-for n = 1:length(t)
-    tn = t(n);
-    % Calculating the integral from xmin=tn to xmax=T
-    integral_sol_mak = integral(full_int_mak,tn,T);
-    V_exact_makeham(n) = (I(T)*S - integral_sol_mak)/I(tn);
+    % Creating derived Integrating factor
+    I = @(t) exp(-delta*t -A*t - (B*c.^(x+t))/log(c));
+    
+    % Creating time step grid
+    t = linspace(0,T,401);
+    
+    % Initializing reserve array
+    V_exact_makeham = zeros(1,length(t));
+    
+    
+    % Creating function for integral
+    full_int_mak = @(s) I(s).*(P-S*mu(s));
+    % Calculate analytical reserve at each time
+    for n = 1:length(t)
+        tn = t(n);
+        % Calculating the integral from xmin=tn to xmax=T
+        integral_sol_mak = integral(full_int_mak,tn,T);
+        V_exact_makeham(n) = (I(T)*S - integral_sol_mak)/I(tn);
+    end
 end
 
 % Find reserve at year 10, indicated year of textbook. Same as 40 years old
