@@ -176,3 +176,98 @@ title('Stability Bound for RK4 Method under Makeham Mortality');
 legend('Location','best');
 grid on;
 
+%%
+%Gompertz Mortality
+
+T=20;
+x= 90; 
+delta = 0.04;
+P = 2500; 
+S= 100000; 
+
+B = 2.7e-6;
+c = 1.124;
+mu = @(t) B*c^(x+T);
+mu_T = mu(T);
+
+N_vals = [1,2,4,10,20];
+
+V0_euler = zeros(size(N_vals));
+V0_RK = zeros(size(N_vals));
+V0_trap = zeros(size(N_vals));
+
+for i = 1:length(N_vals)
+    N = N_vals(i);
+    h = -T/N;
+    t = linspace(T,0,N+1);
+
+    % Initialize the reserves
+    V_euler = zeros(1,N+1);
+    V_RK = zeros(1,N+1);
+    V_trap = zeros(1,N+1);
+
+    %creating first entry of array as terminal condition
+    V_euler(1) = S;
+    V_RK(1) = S;
+    V_trap(1) = S;
+
+    % Solve using numerical methods
+    for n = 1:N
+        V_euler(n+1) = my_Euler_thiele(t(n),V_euler(n),h,delta,P,S,mu);
+        V_RK(n+1) = my_RK_thiele(t(n),V_RK(n),h,delta,P,S,mu);
+        V_trap(n+1) = my_trapezoidal_thiele(t(n),V_trap(n),h,delta,P,S,mu);
+    end
+
+    % Store reserve at t = 0 for each step size
+    V0_euler(i) = V_euler(end);
+    V0_RK(i) = V_RK(end);
+    V0_trap(i) = V_trap(end);
+
+end
+
+
+results = table(N_vals', (T./N_vals)',V0_euler', V0_RK', V0_trap', ...
+    'VariableNames', {'N','StepSize', ...
+    'EulerReserve','RK4Reserve','TrapezoidalReserve'});
+
+disp(results);
+
+%recalculating exact under gompertz % Creating derived Integrating factor
+I = @(t) exp(-delta*t - (B*c.^(x+t))/log(c));
+
+% Creating time step grid
+t = linspace(0,T,401);
+
+% Initializing reserve array
+V_exact_gompertz = zeros(1,length(t));
+
+% Creating function for integral
+full_int_gomp = @(s) I(s).*(P-S*mu(s));
+% Calculate analytical reserve at each time
+for n = 1:length(t)
+    tn = t(n);
+    % Calculating the integral from xmin=tn to xmax=T
+    integral_sol_gomp = integral(full_int_gomp,tn,T);
+    V_exact_gompertz(n) = (I(T)*S - integral_sol_gomp)/I(tn);
+end
+
+% Find reserve at year 10, indicated year of textbook. Same as 40 years old
+YR0 = find(t == 0,1);
+fprintf('Gompertz reserve at year 0: %.10f\n',V_exact_gompertz(YR0));
+
+error_euler = abs(V0_euler - V_exact_gompertz(YR0));
+error_RK = abs(V0_RK - V_exact_gompertz(YR0));
+error_trap = abs(V0_trap - V_exact_gompertz(YR0));
+
+figure;
+
+plot(T./N_vals,V0_euler,'o-','LineWidth',1.5);
+hold on;
+plot(T./N_vals,V0_RK,'s-','LineWidth',1.5);
+plot(T./N_vals,V0_trap,'^-','LineWidth',1.5);
+
+xlabel('Absolute Step Size |h|');
+ylabel('Reserve at t = 0 ($)');
+title('Numerical Reserves under Gompertz Mortality, Age 90');
+legend('Euler','RK4','Trapezoidal','Location','best');
+grid on;

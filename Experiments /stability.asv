@@ -66,22 +66,19 @@ for x = ages
 end
 
 %% 
-% Plotting Stability bounds under gompertz
+% Plotting Stability bounds under all mortality
 
 t = linspace(0,T,200);
 
 figure('Position',[100,100,1100,1000]);
-% Euler
-subplot(3,2,1); %creates two stacked sub plots
 
-hold on;
-
-
+% Euler for constant mortality 
+subplot(3,2,1); %creates stacked subplots
 mu_t = mu_const;
 %calculating all stability bounds for all mortality vals
 hmax_euler = 2./(delta + mu_t); 
+yline(hmax_euler, 'LineWidth', 1.5)
     
-
 xlabel('Time (years)');
 ylabel('Maximum |h|');
 ylim([0,75]);
@@ -89,17 +86,11 @@ title('Stability bound for Euler Method under Constant mortality');
 legend('Location','best');
 grid on;
 
-
-% RK4
+% RK4 for constant mortality
 subplot(3,2,2);
-hold on;
-
-for x = ages
-    mu_t = mu_const;
-    hmax_RK = 2.7853./(delta + mu_t);
-    plot(t,hmax_RK,'LineWidth',1.5, 'DisplayName',['Age ',num2str(x)]);
-
-end
+mu_t = mu_const;
+hmax_RK = 2.7853./(delta + mu_t);
+yline(hmax_RK, 'LineWidth', 1.5)
 
 xlabel('Time (years)');
 ylabel('Maximum |h|');
@@ -107,8 +98,9 @@ ylim([0,75]);
 title('Stability Bound for RK4 Method under Constant Mortality');
 legend('Location','best');
 grid on;
-%
 
+%%%%
+%Euler for Gompertz Mortality
 subplot(3,2,3)
 hold on;
 for x = ages
@@ -127,8 +119,7 @@ title('Stability bound for Euler Method under Gompertz mortality');
 legend('Location','best');
 grid on;
 
-
-% RK4
+% RK4 for Gompertz Mortality
 subplot(3,2,4);
 hold on;
 
@@ -145,9 +136,10 @@ ylim([0,75]);
 title('Stability Bound for RK4 Method under Gompertz Mortality');
 legend('Location','best');
 grid on;
-%
-%euler
-subplot(3,2,5); %creates two stacked sub plots
+
+%%%%
+% Euler for Makeham Mortality
+subplot(3,2,5); %creates stacked sub plots
 hold on;
 for x = ages
     %calculates mortality for age x for all time steps
@@ -166,7 +158,7 @@ legend('Location','best');
 grid on;
 
 
-% RK4
+% RK4 for Makeham Mortality
 subplot(3,2,6);
 hold on;
 
@@ -184,3 +176,80 @@ title('Stability Bound for RK4 Method under Makeham Mortality');
 legend('Location','best');
 grid on;
 
+%%
+%Gompertz Mortality
+B = 2.7e-6;
+c = 1.124;
+mu_T = B*c^(x+T);
+T=20;
+x= 90; 
+delta = 0.04;
+P = 2500; 
+S= 100000; 
+
+N_vals = [1,2,4,10,20];
+
+V0_euler = zeros(size(N_vals));
+V0_RK = zeros(size(N_vals));
+V0_trap = zeros(size(N_vals));
+
+for i = 1:length(N_vals)
+    N = N_vals(i);
+    h = -T/N;
+    t = linspace(T,0,N+1);
+
+    % Initialize the reserves
+    V_euler = zeros(1,N+1);
+    V_RK = zeros(1,N+1);
+    V_trap = zeros(1,N+1);
+
+    %creating first entry of array as terminal condition
+    V_euler(1) = S;
+    V_RK(1) = S;
+    V_trap(1) = S;
+
+    % Solve using numerical methods
+    for n = 1:N
+        V_euler(n+1) = my_Euler_thiele(t(n),V_euler(n),h,delta,P,S,mu);
+        V_RK(n+1) = my_RK_thiele(t(n),V_RK(n),h,delta,P,S,mu);
+        V_trap(n+1) = my_trapezoidal_thiele(t(n),V_trap(n),h,delta,P,S,mu);
+    end
+
+    % Store reserve at t = 0 for each step size
+    V0_euler(i) = V_euler(end);
+    V0_RK(i) = V_RK(end);
+    V0_trap(i) = V_trap(end);
+
+end
+
+
+results = table(N_vals', (T./N_vals)',V0_euler', V0_RK', V0_trap', ...
+    'VariableNames', {'N','StepSize', ...
+    'EulerReserve','RK4Reserve','TrapezoidalReserve'});
+
+disp(results);
+
+%recalculating exact under gompertz % Creating derived Integrating factor
+I = @(t) exp(-delta*t - (B*c.^(x+t))/log(c));
+
+% Creating time step grid
+t = linspace(0,T,401);
+
+% Initializing reserve array
+V_exact_gompertz = zeros(1,length(t));
+
+% Creating function for integral
+full_int_gomp = @(s) I(s).*(P-S*mu(s));
+% Calculate analytical reserve at each time
+for n = 1:length(t)
+    tn = t(n);
+    % Calculating the integral from xmin=tn to xmax=T
+    integral_sol_gomp = integral(full_int_gomp,tn,T);
+    V_exact_gompertz(n) = (I(T)*S - integral_sol_gomp)/I(tn);
+end
+
+% Find reserve at year 10, indicated year of textbook. Same as 40 years old
+YR0 = find(t == 0,1);
+YR10 = find(t == 10,1);
+YR20 = find(t == T,1);
+fprintf('Gompertz reserve at year 0: %.10f\n',V_exact_gompertz(YR0));
