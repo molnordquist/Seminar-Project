@@ -348,7 +348,84 @@ Constant_RK = V0_RK;
 Constant_trap = V0_trap;
 Constant_exact = V_constant;
 
+%%
+%Plotting Absolute error
 
+figure;
+
+% Gompertz mortality
+
+h_vals = T./N_vals;
+
+for j = 1:length(ages)
+
+    subplot(2,4,j);
+    hold on;
+
+    errors_euler = abs(Gompertz_euler(j,:)-Gompertz_exact(j));
+    errors_RK = abs(Gompertz_RK(j,:)-Gompertz_exact(j));
+    errors_trap = abs(Gompertz_trap(j,:)-Gompertz_exact(j));
+    
+    plot(h_vals,errors_euler,'Color', 'r','LineWidth', 1.5);
+    plot(h_vals,errors_RK,'Color', 'b','LineWidth', 1.5);
+    plot(h_vals,errors_trap,'LineWidth', 1.5);
+
+    xlabel('Step Size |h|');
+    ylabel('Absolute Error (Gompertz Mortality)');
+    title(['Age ',num2str(ages(j)), ' (Gompertz)']);
+
+    legend('Euler','RK4','Trapezoidal');
+    grid on;
+%calculating order of convergence
+    for i= 1:length(N_vals)-1
+        k_euler(i) = log(errors_euler(i)/errors_euler(i+1))/log(h_vals(i)/h_vals(i+1));
+        k_RK(i) = log(errors_RK(i)/errors_RK(i+1))/log(h_vals(i)/h_vals(i+1));
+        k_trap(i) = log(errors_trap(i)/errors_trap(i+1))/log(h_vals(i)/h_vals(i+1));
+    end
+
+%Creatng results tables
+    order_converg_results = table((h_vals(2:end))', k_euler', k_RK', k_trap', 'VariableNames', {'h', 'Euler Order of Convergence', 'RK4 Order of Convergence', 'Trapezoidal Order of Convergence'});
+    disp(order_converg_results);
+    converg_results = table(h_vals', errors_euler', errors_RK', errors_trap', 'VariableNames', {'h', 'Euler Error', 'RK4 Error', 'Trapezoidal Error'});
+    disp(converg_results);
+end
+
+
+
+% Makeham mortality
+for j = 1:length(ages)
+    
+    subplot(2,4,j+4);
+    hold on;
+    
+    errors_euler = abs(Makeham_euler(j,:)-Makeham_exact(j));
+    errors_RK = abs(Makeham_RK(j,:)-Makeham_exact(j));
+    errors_trap = abs(Makeham_trap(j,:)-Makeham_exact(j));
+
+    plot(h_vals,errors_euler,'Color', 'r','LineWidth', 1.5);
+    plot(h_vals,errors_RK,'Color', 'b', 'LineWidth', 1.5);
+    plot(h_vals,errors_trap, 'LineWidth', 1.5);
+    xlabel('Step Size |h|');
+    ylabel('Absolute Error');
+    title(['Age ',num2str(ages(j)), ' (Makeham)']);
+
+    legend('Euler','RK4','Trapezoidal');
+    grid on;
+%calculating order of convergence
+    for i= 1:length(N_vals)-1
+        k_euler(i) = log(errors_euler(i)/errors_euler(i+1))/log(h_vals(i)/h_vals(i+1));
+        k_RK(i) = log(errors_RK(i)/errors_RK(i+1))/log(h_vals(i)/h_vals(i+1));
+        k_trap(i) = log(errors_trap(i)/errors_trap(i+1))/log(h_vals(i)/h_vals(i+1));
+    end
+
+%Creatng results tables
+    order_converg_results = table((h_vals(2:end))', k_euler', k_RK', k_trap', 'VariableNames', {'h', 'Euler Order of Convergence', 'RK4 Order of Convergence', 'Trapezoidal Order of Convergence'});
+    disp(order_converg_results);
+    converg_results = table(h_vals', errors_euler', errors_RK', errors_trap', 'VariableNames', {'h', 'Euler Error', 'RK4 Error', 'Trapezoidal Error'});
+    disp(converg_results);
+end
+
+sgtitle('Absolute Error vs. Step Size');
 
 
 
