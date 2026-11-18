@@ -193,7 +193,7 @@ for j = 1:length(ages)
         end
     
         % Store reserve at t = 0 for each step size
-        V0_euler_m(i) = V_euler(end);
+        V0_euler(i) = V_euler(end);
         V0_RK(i) = V_RK(end);
         V0_trap(i) = V_trap(end);
 
