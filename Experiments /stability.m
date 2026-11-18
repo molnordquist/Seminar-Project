@@ -192,6 +192,13 @@ c = 1.124;
 ages = [30 50 70 90];
 %as defiing N values to change step-sizes
 N_vals = [1,2,4,10,20];
+
+%define matrix to save values 
+Gompertz_euler = zeros(length(ages),length(N_vals));
+Gompertz_RK = zeros(length(ages),length(N_vals));
+Gompertz_trap = zeros(length(ages),length(N_vals));
+Gompertz_exact = zeros(size(ages));
+
 %loop through policy starting age
 colors = lines(length(ages));
 figure;
@@ -234,6 +241,15 @@ for j = 1:length(ages)
     
 
     end
+    Gompertz_euler(j,:) = V0_euler;
+    Gompertz_RK(j,:) = V0_RK;
+    Gompertz_trap(j,:) = V0_trap;
+
+    %calculate refrence solution for Gompertz
+    I = @(t) exp(-delta*t - (B*c.^(x+t))/log(c));
+    full_int_gomp = @(s) I(s).*(P-S*mu(s));
+    integral_sol_gomp = integral(full_int_gomp,0,T);
+    Gompertz_exact(j) = (I(T)*S - integral_sol_gomp)/I(0);
 
     % Plot numerical reserves for this age
     plot(T./N_vals,V0_euler,'o-', ...
@@ -261,32 +277,16 @@ grid on;
     
     %disp(results);
     
-    %recalculating exact under gompertz. Creating derived Integrating factor
-    I = @(t) exp(-delta*t - (B*c.^(x+t))/log(c));
+   
     
-    % Creating time step grid
-    t = linspace(0,T,401);
-    
-    % Initializing reserve array
-    V_exact_gompertz = zeros(1,length(t));
-    
-    % Creating function for integral
-    full_int_gomp = @(s) I(s).*(P-S*mu(s));
-    % Calculate analytical reserve at each time
-    for n = 1:length(t)
-        tn = t(n);
-        % Calculating the integral from xmin=tn to xmax=T
-        integral_sol_gomp = integral(full_int_gomp,tn,T);
-        V_exact_gompertz(n) = (I(T)*S - integral_sol_gomp)/I(tn);
-    end
 
 % Find reserve at year 10, indicated year of textbook. Same as 40 years old
 YR0 = find(t == 0,1);
-fprintf('Gompertz reserve at year 0: %.10f\n',V_exact_gompertz(YR0));
+fprintf('Gompertz reserve at year 0: %.10f\n',Gompertz_exact(YR0));
 
-error_euler = abs(V0_euler - V_exact_gompertz(YR0));
-error_RK = abs(V0_RK - V_exact_gompertz(YR0));
-error_trap = abs(V0_trap - V_exact_gompertz(YR0));
+error_euler = abs(V0_euler - Gompertz_exact(YR0));
+error_RK = abs(V0_RK - Gompertz_exact(YR0));
+error_trap = abs(V0_trap - Gompertz_exact(YR0));
 
 %figure;
 
@@ -301,11 +301,7 @@ error_trap = abs(V0_trap - V_exact_gompertz(YR0));
 %legend('Euler','RK4','Trapezoidal','Location','best');
 %grid on;
 
-%Save results to plot together 
-Gompertz_euler = V0_euler;
-Gompertz_RK = V0_RK; 
-Gompertz_trap = V0_trap;
-Gompertz_exact = V_exact_gompertz(1);
+
 
 %% Makeham 
 T = 20;
@@ -323,13 +319,20 @@ c = 1.124;
 ages = [30 50 70 90];
 %as defiing N values to change step-sizes
 N_vals = [1,2,4,10,20];
+%initiatling 
+Makeham_euler = zeros(length(ages),length(N_vals));
+Makeham_RK = zeros(length(ages),length(N_vals));
+Makeham_trap = zeros(length(ages),length(N_vals));
+Makeham_exact = zeros(size(ages));
 
+colors = lines(length(ages));
+figure;
+hold on;
 %loop through policy starting age
 for j = 1:length(ages)
     x = ages(j);
     %mortality must be in this loop because it changes with age
     mu = @(t) A + B*c.^(x+t);
-
 
     V0_euler = zeros(size(N_vals));
     V0_RK = zeros(size(N_vals));
@@ -363,36 +366,46 @@ for j = 1:length(ages)
         V0_trap(i) = V_trap(end);
 
     end
+    %updates the initiated arrays
+    Makeham_euler(j,:) = V0_euler;
+    Makeham_RK(j,:) = V0_RK;
+    Makeham_trap(j,:) = V0_trap;
 
-
-    % Creating derived Integrating factor
+    % Calculating the refrence solution for Makeham mortality
     I = @(t) exp(-delta*t -A*t - (B*c.^(x+t))/log(c));
-    
-    % Creating time step grid
-    t = linspace(0,T,401);
-    
-    % Initializing reserve array
-    V_exact_makeham = zeros(1,length(t));
-    
-    
-    % Creating function for integral
     full_int_mak = @(s) I(s).*(P-S*mu(s));
-    % Calculate analytical reserve at each time
-    for n = 1:length(t)
-        tn = t(n);
-        % Calculating the integral from xmin=tn to xmax=T
-        integral_sol_mak = integral(full_int_mak,tn,T);
-        V_exact_makeham(n) = (I(T)*S - integral_sol_mak)/I(tn);
-    end
+    integral_sol_mak = integral(full_int_mak,0,T);
+    Makeham_exact(i) = (I(T)*S - integral_sol_mak)/I(0);
+
+    plot(T./N_vals,V0_euler,'o-', ...
+        'Color',colors(j,:),'LineWidth',1.5, ...
+        'DisplayName',sprintf('Euler at Age %d',x));
+
+    plot(T./N_vals,V0_RK,'s-', ...
+        'Color',colors(j,:),'LineWidth',1.5, ...
+        'DisplayName',sprintf('RK4 at Age %d',x));
+
+    plot(T./N_vals,V0_trap,'^-', ...
+        'Color',colors(j,:),'LineWidth',1.5, ...
+        'DisplayName',sprintf('Trapezoidal at Age %d',x));
 end
+
+xlabel('Absolute Step Size |h|');
+ylabel('Reserve at t = 0 ($)');
+title('Numerical Reserves by Age under Gompertz Mortality');
+legend('Location','eastoutside');
+grid on;
+
+
+
 
 % Find reserve at year 10, indicated year of textbook. Same as 40 years old
 YR0 = find(t == 0,1);
-fprintf('Makeham reserve at year 0: %.10f\n',V_exact_makeham(YR0));
+fprintf('Makeham reserve at year 0: %.10f\n',Makeham_exact(YR0));
 
-error_euler = abs(V0_euler - V_exact_makeham(YR0));
-error_RK = abs(V0_RK - V_exact_makeham(YR0));
-error_trap = abs(V0_trap - V_exact_makeham(YR0));
+error_euler = abs(V0_euler - Makeham_exact(YR0));
+error_RK = abs(V0_RK - Makeham_exact(YR0));
+error_trap = abs(V0_trap - Makeham_exact(YR0));
 
 %figure;
 
@@ -407,11 +420,7 @@ error_trap = abs(V0_trap - V_exact_makeham(YR0));
 %legend('Euler','RK4','Trapezoidal','Location','best');
 %grid on;
 
-%Save results to plot together 
-Makeham_euler = V0_euler;
-Makeham_RK = V0_RK; 
-Makeham_trap = V0_trap;
-Makeham_exact = V_exact_makeham(1);
+
 
 
 %%
@@ -425,6 +434,7 @@ x = 70; %age
 % mortality
 mu_const = 0.01;
 mu = @(t) mu_const;
+
 
 %creating timegrid
 N_vals = [1,2,4,10,20];
@@ -495,11 +505,11 @@ error_trap = abs(V0_trap - V_constant);
 %title('Numerical Reserves under Constant Mortality');
 %legend('Euler','RK4','Trapezoidal','Location','best');
 
-%Save results to plot together 
+% Save results to plot together
 Constant_euler = V0_euler;
-Constant_RK = V0_RK; 
+Constant_RK = V0_RK;
 Constant_trap = V0_trap;
-Constant_exact = V_constant(1);
+Constant_exact = V_constant;
 
 %%
 %Plotting all three mortality models together
@@ -549,6 +559,84 @@ ylabel('Reserve at t = 0 ($)');
 title('Makeham Mortality');
 legend('Euler','RK4','Trapezoidal','Reference','Location','best');
 grid on;
+%%
+
+%% 
+% Reserves under different mortality models plotted side by side
+figure;
+
+colors = lines(length(ages));
+
+% Constant Mortakity
+subplot(1,3,1);
+hold on;
+
+plot(T./N_vals,Constant_euler,'o-','LineWidth',1.5);
+plot(T./N_vals,Constant_RK,'s-','LineWidth',1.5);
+plot(T./N_vals,Constant_trap,'^-','LineWidth',1.5);
+
+yline(Constant_exact,'k--','Exact','LineWidth',2.5);
+
+xlabel('Absolute Step Size |h|');
+ylabel('Reserve at t = 0 (Reserve needed at start of Policy)');
+title('Constant Mortality');
+legend('Euler','RK4','Trapezoidal','Exact','Location','best');
+grid on;
+
+
+% Gompertz
+subplot(1,3,2);
+hold on;
+
+for j = 1:length(ages)
+    plot(T./N_vals,Gompertz_euler(j,:),'o-', ...
+        'Color',colors(j,:),'LineWidth',1.5, 'DisplayName',sprintf('Euler at age %d', ages(j)));
+    plot(T./N_vals,Gompertz_RK(j,:),'s-', ...
+        'Color',colors(j,:),'LineWidth',1.5, 'DisplayName',sprintf('RK4 at age %d', ages(j)));
+    plot(T./N_vals,Gompertz_trap(j,:),'^-', ...
+        'Color',colors(j,:),'LineWidth',1.5,'DisplayName',sprintf('Trapezoidal at age %d', ages(j)));
+    
+    yline(Gompertz_exact(j), 'k--', 'Exact', 'LineWidth', 2.5, ...
+    sprintf('Exact Solution at age %d', ages(j)));
+end
+
+
+xlabel('Absolute Step Size |h|');
+ylabel('Reserve at t = 0 (Reserve needed at start of Policy)');
+title('Gompertz Mortality');
+legend('Euler','RK4','Trapezoidal','Color',colors(j,:),'Location','best');
+grid on;
+
+
+% Makeham
+subplot(1,3,3);
+hold on;
+
+for j = 1:length(ages)
+
+    plot(T./N_vals,Makeham_euler(j,:),'o-', ...
+        'Color',colors(j,:),'LineWidth',1.5, 'DisplayName',sprintf('Euler at age %d', ages(j)));
+
+    plot(T./N_vals,Makeham_RK(j,:),'s--', ...
+        'Color',colors(j,:),'LineWidth',1.5, ...
+        'DisplayName',sprintf('RK4 at age %d', ages(j)));
+
+    plot(T./N_vals,Makeham_trap(j,:),'^:', ...
+        'Color',colors(j,:),'LineWidth',1.5, ...
+        'DisplayName',sprintf('Trapezoidal at age %d', ages(j)));
+    
+    yline(Makeham_exact(j), 'k--', 'Color',colors(j,:), 'LineWidth', 2.5, ...
+    sprintf('Exact Solution at age %d', ages(j)));
+
+end
+
+xlabel('Absolute Step Size |h|');
+ylabel('Reserve at t = 0 ($)');
+title('Makeham Mortality');
+grid on;
+
+sgtitle('Comparison of Numerical Reserves Across Mortality Models');
+
 
 
 
